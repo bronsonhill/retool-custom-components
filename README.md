@@ -7,8 +7,25 @@ These components are designed to extend the functionality of Retool apps and pro
 
 ---
 
-#### Custom component libraries template
+## 🧩 TaskBoard
 
-Use this as a base for new custom component library projects within [Retool](https://www.retool.com).
+**TaskBoard** is a Retool Custom Component that replicates the functionality of a project management board, enabling users to organize and track tasks visually across four customizable columns:
 
-To learn more about how custom component libraries work, visit our [official documentation](https://docs.retool.com/apps/guides/custom/custom-component-libraries).
+- **Backlog** 🔴  
+- **Todo** 🟡  
+- **In Progress** 🔵  
+- **Done** 🟢  
+
+#### ✨ Features
+
+- ✅ Drag-and-drop task cards between columns  
+- ➕ Add task functionality using the `+` button  
+- 📝 Rename tasks by clicking on the task name  
+- 🔁 One dynamic property per column to pass data to and from the Retool app
+
+TaskBoard is ideal for managing project workflows, sprints, personal task tracking, or any use case that benefits from a kanban-style interface.
+
+#### Images
+
+Demo: 
+![TaskBoard](./task_board/assets/task_board.png)

@@ -16,10 +16,7 @@
 
 TaskBoard is ideal for managing project workflows, sprints, personal task tracking, or any use case that benefits from a kanban-style interface.
 
-#### ✨ Images
+#### Images
 
 Demo: 
 ![TaskBoard](./assets/task_board.png)
-
-Dynamic Properties:
-![TaskBoard Dynamic Properties](./assets/dynamic_properties.png)
