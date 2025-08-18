@@ -39,9 +39,9 @@
     "postcss-modules": "^6.0.0"
   },
   "retoolCustomComponentLibraryConfig": {
-    "name": "CustomComponentLibrary",
-    "label": "Custom Component Library",
-    "description": "Library of Custom Components",
+    "name": "BoostAICustomComponents",
+    "label": "BoostAI Custom Components",
+    "description": "A library full of great ",
     "entryPoint": "src/index.tsx",
     "outputPath": "dist"
   }

@@ -11,6 +11,13 @@ interface KanbanColumnProps {
   width: string | number;
   onAddTask: (columnId: string) => void;
   onTaskUpdate: (taskId: string, newContent: string) => void;
+  onTaskClick?: (task: Task) => void;
+  fontFamily?: string;
+  columnPadding?: number;
+  headerMarginBottom?: number;
+  fontSize?: number;
+  taskCardMargin?: number;
+  taskTextAttribute?: string;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -20,6 +27,13 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   width,
   onAddTask,
   onTaskUpdate,
+  onTaskClick,
+  fontFamily,
+  columnPadding = 10,
+  headerMarginBottom = 10,
+  fontSize = 18,
+  taskCardMargin = 8,
+  taskTextAttribute = 'description',
 }) => {
   const { setNodeRef: setDroppableRef } = useDroppable({
     id: allColId
@@ -30,11 +44,11 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   };
 
   return (
-    <div className="kanban-column" style={{ width, minWidth: 'auto' }}>
-      <div className="column-header">
+    <div className="kanban-column" style={{ width, minWidth: 'auto', fontFamily: fontFamily || 'inherit', padding: columnPadding }}>
+      <div className="column-header" style={{ marginBottom: headerMarginBottom }}>
         <span className="column-color-dot" style={{ background: column.color }} />
-        <span className="column-title">{column.title}</span>
-        <span className="column-task-count">{column.taskIds.length}</span>
+        <span className="column-title" style={{ fontSize }}>{column.title}</span>
+        <span className="column-task-count">{tasks.length}</span>
         <div className="column-header-right">
           <button className="add-task-button" onClick={handleAddClick}>+</button>
         </div>
@@ -52,6 +66,11 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
               idx={idx} 
               columnColor={column.color}
               onTaskUpdate={onTaskUpdate}
+              onTaskClick={onTaskClick}
+              fontFamily={fontFamily}
+              fontSize={fontSize}
+              taskTextAttribute={taskTextAttribute}
+              style={{ marginBottom: idx !== tasks.length - 1 ? taskCardMargin : 0 }}
             />
           ))}
           {tasks.length === 0 && (

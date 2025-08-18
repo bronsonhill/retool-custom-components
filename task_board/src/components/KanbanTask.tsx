@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Task } from './types';
-import DragHandle from './DragHandle';
+import DragHandle, { DragHandleProps } from './DragHandle';
 
 interface KanbanTaskProps {
   task: Task;
@@ -10,6 +10,11 @@ interface KanbanTaskProps {
   idx: number;
   columnColor: string;
   onTaskUpdate: (taskId: string, newContent: string) => void;
+  onTaskClick?: (task: Task) => void;
+  fontFamily?: string;
+  fontSize?: number;
+  taskTextAttribute?: string;
+  style?: React.CSSProperties;
 }
 
 const KanbanTask: React.FC<KanbanTaskProps> = ({
@@ -18,6 +23,11 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({
   idx,
   columnColor,
   onTaskUpdate,
+  onTaskClick,
+  fontFamily,
+  fontSize = 18,
+  taskTextAttribute = 'description',
+  style = {},
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.content);
@@ -31,7 +41,10 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({
     '--task-border-color': columnColor,
     borderLeft: `4px solid var(--task-border-color)`,
     background: '#fff',
-  } as React.CSSProperties), [transform, transition, columnColor]);
+    fontFamily: fontFamily || 'inherit',
+    fontSize: fontSize,
+    ...style,
+  } as React.CSSProperties), [transform, transition, columnColor, fontFamily, fontSize, style]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -62,30 +75,52 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({
       setEditValue(task.content);
     }
   };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!isEditing && onTaskClick) {
+      onTaskClick(task);
+    }
+  };
   
   return (
     <div 
       ref={setNodeRef} 
       className={`kanban-task ${isDragging ? 'dragging' : ''}`}
       style={containerStyle}
-      {...attributes}
-      {...(isEditing ? {} : listeners)}
       onDoubleClick={handleDoubleClick}
+      onClick={handleClick}
     >
-      <DragHandle />
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          type="text"
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          className="task-edit-input"
-        />
-      ) : (
-        <span className="task-content">{task.content}</span>
-      )}
+      <DragHandle listeners={listeners} attributes={attributes} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="task-edit-input"
+            style={{ fontFamily: fontFamily || 'inherit', fontSize: fontSize }}
+          />
+        ) : (
+          <>
+            <span className="task-content" style={{ fontFamily: fontFamily || 'inherit', fontSize: fontSize }}>{task.content}</span>
+            {task.logs && task.logs.length > 0 && (
+              <ul className="task-logs-list" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                {task.logs.map((log, idx) => (
+                  <li key={idx} style={{ fontSize: fontSize - 3, color: '#888', marginTop: 2, wordBreak: 'break-word' }}>
+                    {log.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {taskTextAttribute && task[taskTextAttribute] && (
+              <span className="task-text-attribute" style={{ fontSize: fontSize - 2, color: '#6b7280', marginTop: 2, wordBreak: 'break-word' }}>{task[taskTextAttribute]}</span>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 .kanban-container {
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  gap: 14px;
+  padding: 12px;
   background: #f7fafc;
   height: 100%;
   width: 100%;
@@ -12,7 +12,7 @@
 .kanban-column {
   background: #fff;
   border-radius: 16px;
-  padding: 16px;
+  padding: 10px;
   height: 100%;
   box-shadow: 0 2px 8px #0001;
   display: flex;
@@ -25,7 +25,7 @@
 .column-header {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .column-color-dot {
@@ -111,10 +111,9 @@
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 1px 4px #0001;
-  padding: 16px 20px;
+  padding: 16px 12px;
   font-weight: 500;
   font-size: 18px;
-  cursor: grab;
   user-select: none;
   display: flex;
   align-items: center;
@@ -127,19 +126,19 @@
 .task-drag-handle {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 2px;
+  gap: 1px;
+  padding: 0 2px;
   cursor: grab;
 }
 
 .drag-handle-dots {
   display: flex;
-  gap: 2px;
+  gap: 1px;
 }
 
 .drag-handle-dot {
-  width: 2px;
-  height: 2px;
+  width: 4px;
+  height: 4px;
   background: #94a3b8;
   border-radius: 50%;
 }
