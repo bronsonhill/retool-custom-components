@@ -18,6 +18,7 @@ interface KanbanColumnProps {
   fontSize?: number;
   taskCardMargin?: number;
   taskTextAttribute?: string;
+  isDragOver?: boolean;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -34,6 +35,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   fontSize = 18,
   taskCardMargin = 8,
   taskTextAttribute = 'description',
+  isDragOver = false,
 }) => {
   const { setNodeRef: setDroppableRef } = useDroppable({
     id: allColId
@@ -44,7 +46,15 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   };
 
   return (
-    <div className="kanban-column" style={{ width, minWidth: 'auto', fontFamily: fontFamily || 'inherit', padding: columnPadding }}>
+    <div 
+      className={`kanban-column ${isDragOver ? 'drag-over' : ''}`} 
+      style={{ 
+        width, 
+        minWidth: 'auto', 
+        fontFamily: fontFamily || 'inherit', 
+        padding: columnPadding
+      }}
+    >
       <div className="column-header" style={{ marginBottom: headerMarginBottom }}>
         <span className="column-color-dot" style={{ background: column.color }} />
         <span className="column-title" style={{ fontSize }}>{column.title}</span>

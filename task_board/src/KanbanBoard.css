@@ -7,6 +7,8 @@
   width: 100%;
   min-height: 0;
   box-sizing: border-box;
+  overflow: visible;
+  position: relative;
 }
 
 .kanban-column {
@@ -20,6 +22,13 @@
   min-width: 0;
   flex: 1;
   box-sizing: border-box;
+  overflow: visible;
+  transition: all 0.2s ease;
+}
+
+.kanban-column.drag-over {
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.15), 0 2px 8px #0001;
+  transform: scale(1.01);
 }
 
 .column-header {
@@ -79,10 +88,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow-y: auto;
+  overflow: visible;
   flex: 1;
   min-height: 0;
   padding: 0 8px;
+  position: relative;
 }
 
 .tasks-container-empty {
@@ -121,6 +131,7 @@
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 }
 
 .task-drag-handle {
@@ -144,7 +155,26 @@
 }
 
 .kanban-task.dragging {
+  opacity: 0.5;
   box-shadow: 0 4px 16px #0002;
+  z-index: 1000;
+  position: relative;
+}
+
+.dragging-overlay {
+  border-radius: 12px;
+  padding: 16px 12px;
+  font-weight: 500;
+  font-size: 18px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1000;
 }
 
 .task-content {

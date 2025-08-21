@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Retool } from '@tryretool/custom-component-support';
 import {
   DndContext,
@@ -6,7 +6,10 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-  rectIntersection
+  DragStartEvent,
+  DragOverEvent,
+  closestCorners,
+  DragOverlay
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -165,6 +168,8 @@ function KanbanBoard() {
     : [];
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [overColumnId, setOverColumnId] = useState<string | null>(null);
 
   // State to store the last task involved in an event
   const [lastTaskEvent, setLastTaskEvent] = Retool.useStateObject({
@@ -200,24 +205,63 @@ function KanbanBoard() {
     onEditEvent();
   };
 
-  // Handle drag end (move task between columns or reorder)
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
     const activeId = String(active.id);
-    const overId = String(over.id);
     const [fromColId, fromTaskIdxStr] = activeId.split('-');
     const fromTaskIdx = Number(fromTaskIdxStr);
-    const [toColId, toTaskIdxStr] = overId.split('-');
-    const toTaskIdx = toColId ? Number(toTaskIdxStr) : undefined;
+    const task = getColumnTasks(fromColId)[fromTaskIdx];
+    setActiveTask(task || null);
+  };
+
+  // Handle drag over
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+    if (!over) {
+      setOverColumnId(null);
+      return;
+    }
+    
+    const overId = String(over.id);
+    // Check if hovering over a column or a task
+    const isOverColumn = !overId.includes('-');
+    const columnId = isOverColumn ? overId : overId.split('-')[0];
+    setOverColumnId(columnId);
+  };
+
+  // Handle drag end (move task between columns or reorder)
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveTask(null);
+    setOverColumnId(null);
+    const { active, over } = event;
+    if (!over) return;
+    
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    
+    // Parse the active task ID (format: "columnId-taskIdx")
+    const [fromColId, fromTaskIdxStr] = activeId.split('-');
+    const fromTaskIdx = Number(fromTaskIdxStr);
+    
+    // Get the active task
     const activeTask = getColumnTasks(fromColId)[fromTaskIdx];
     if (!activeTask) return;
-    if (!toColId || fromColId === toColId) {
+    
+    // Check if dropping on a column or a task
+    const isDroppingOnColumn = !overId.includes('-');
+    const toColId = isDroppingOnColumn ? overId : overId.split('-')[0];
+    const toTaskIdx = isDroppingOnColumn ? undefined : Number(overId.split('-')[1]);
+    
+    if (fromColId === toColId) {
       // Reorder within same column
       const colTasks = getColumnTasks(fromColId);
       const reordered = [...colTasks];
       const [moved] = reordered.splice(fromTaskIdx, 1);
-      reordered.splice(toTaskIdx ?? reordered.length, 0, moved);
+      const insertIndex = toTaskIdx !== undefined ? toTaskIdx : reordered.length;
+      reordered.splice(insertIndex, 0, moved);
+      
+      // Update tasks with new ordering
       const newTasks = [
         ...tasks.filter(t => t.columnId !== fromColId),
         ...reordered.map((t, i) => ({ ...t, order: i }))
@@ -225,14 +269,40 @@ function KanbanBoard() {
       setTasks(newTasks);
     } else {
       // Move to another column
-      const newTasks = tasks.map(task =>
-        task.id === activeTask.id
-          ? { ...task, columnId: toColId, order: toTaskIdx ?? 0 }
-          : task.columnId === toColId && toTaskIdx !== undefined && task.order !== undefined && task.order >= toTaskIdx
-            ? { ...task, order: (task.order ?? 0) + 1 }
-            : task
-      );
-      setTasks(newTasks);
+      const targetColTasks = getColumnTasks(toColId);
+      let insertIndex: number;
+      
+      if (toTaskIdx !== undefined) {
+        // Dropping on a specific task
+        insertIndex = toTaskIdx;
+      } else {
+        // Dropping on the column - add to the end
+        insertIndex = targetColTasks.length;
+      }
+      
+      // Create new tasks array with the moved task
+      const newTasks = tasks.map(task => {
+        if (task.id === activeTask.id) {
+          return { ...task, columnId: toColId, order: insertIndex };
+        }
+        // Shift tasks in the target column if needed
+        if (task.columnId === toColId && task.order !== undefined && task.order >= insertIndex) {
+          return { ...task, order: (task.order ?? 0) + 1 };
+        }
+        return task;
+      });
+      
+      // Reorder tasks in the target column to ensure proper ordering
+      const updatedTasks = newTasks.filter(task => task.columnId === toColId)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((task, index) => ({ ...task, order: index }));
+      
+      const finalTasks = [
+        ...newTasks.filter(task => task.columnId !== toColId),
+        ...updatedTasks
+      ];
+      
+      setTasks(finalTasks);
     }
   };
 
@@ -279,7 +349,13 @@ function KanbanBoard() {
       }}
     >
       <h2 style={{ fontFamily: fontFamily || 'inherit', marginBottom: 16, fontSize: fontSize + 4 }}>{boardTitle}</h2>
-      <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragEnd={handleDragEnd}>
+      <DndContext 
+        sensors={sensors} 
+        collisionDetection={closestCorners} 
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
           {columnOrder.map((colId: string) => {
             const col = columns[colId];
@@ -300,10 +376,61 @@ function KanbanBoard() {
                 fontSize={fontSize}
                 taskCardMargin={taskCardMargin}
                 taskTextAttribute={taskTextAttribute}
+                isDragOver={overColumnId === col.id}
               />
             );
           })}
         </SortableContext>
+        <DragOverlay>
+          {activeTask ? (
+            <div 
+              className="kanban-task dragging-overlay"
+              style={{
+                '--task-border-color': columns[activeTask.columnId]?.color || '#000',
+                borderLeft: `4px solid var(--task-border-color)`,
+                background: '#fff',
+                fontFamily: fontFamily || 'inherit',
+                fontSize: fontSize,
+                transform: 'rotate(5deg)',
+                boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+              } as React.CSSProperties}
+            >
+              <div className="task-drag-handle">
+                <div className="drag-handle-dots">
+                  <span className="drag-handle-dot" />
+                  <span className="drag-handle-dot" />
+                </div>
+                <div className="drag-handle-dots">
+                  <span className="drag-handle-dot" />
+                  <span className="drag-handle-dot" />
+                </div>
+                <div className="drag-handle-dots">
+                  <span className="drag-handle-dot" />
+                  <span className="drag-handle-dot" />
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <span className="task-content" style={{ fontFamily: fontFamily || 'inherit', fontSize: fontSize }}>
+                  {activeTask.content}
+                </span>
+                {activeTask.logs && activeTask.logs.length > 0 && (
+                  <ul className="task-logs-list" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                    {activeTask.logs.map((log, idx) => (
+                      <li key={idx} style={{ fontSize: fontSize - 3, color: '#888', marginTop: 2, wordBreak: 'break-word' }}>
+                        {log.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {taskTextAttribute && activeTask[taskTextAttribute] && (
+                  <span className="task-text-attribute" style={{ fontSize: fontSize - 2, color: '#6b7280', marginTop: 2, wordBreak: 'break-word' }}>
+                    {activeTask[taskTextAttribute]}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );
